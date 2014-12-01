@@ -91,6 +91,75 @@ namespace snowcrash {
         ParseResultRef();
     };
 
+    template<mdp::MarkdownNodeType NodeType> struct SectionParserNodeAdapter;
+    typedef std::map<std::string, SectionType> MapRegexToSectionType;
+
+    template <mdp::MarkdownNodeType NodeType, typename RegexMapper>
+    struct SectionTypeParser {
+
+        typedef SectionTypeParser<NodeType, RegexMapper> SelfType;
+
+        struct match : public std::binary_function<MapRegexToSectionType::value_type, mdp::ByteBuffer, bool> {
+            bool operator()(const MapRegexToSectionType::value_type& rx, const mdp::ByteBuffer& subject) const {
+                return RegexMatch(subject, rx.first);
+            }
+        };
+
+        static SectionType sectionType(const MarkdownNodeIterator& node){ 
+
+            SectionParserNodeAdapter<NodeType> adapter;
+
+            if (!adapter.validMarkdownType(node)) return UndefinedSectionType;
+
+            mdp::ByteBuffer subject = adapter.getSubject(node);
+
+            MapRegexToSectionType types = RegexMapper()();
+
+            MapRegexToSectionType::iterator it = std::find_if(types.begin(), types.end(), std::bind2nd(SelfType::match(), subject));
+
+            if(it == types.end()) return UndefinedSectionType; 
+                
+            return it->second;
+        }
+    };
+
+
+    template<mdp::MarkdownNodeType NodeType>
+    struct SectionParserNodeAdapter {
+        bool validMarkdownType(const MarkdownNodeIterator& node) const;
+        mdp::ByteBuffer getSubject(const MarkdownNodeIterator& node) const;
+    };
+
+    template<> struct SectionParserNodeAdapter<mdp::HeaderMarkdownNodeType> {
+        bool validMarkdownType(const MarkdownNodeIterator& node) const {
+            return node->type == mdp::HeaderMarkdownNodeType && !node->text.empty();
+        }
+
+        mdp::ByteBuffer getSubject(const MarkdownNodeIterator& node) const {
+
+            mdp::ByteBuffer subject = node->text;
+            TrimString(subject);
+
+            return subject;
+        }
+    };
+
+    template<> struct SectionParserNodeAdapter<mdp::ListItemMarkdownNodeType> {
+        bool validMarkdownType(const MarkdownNodeIterator& node) const {
+            return node->type == mdp::ListItemMarkdownNodeType && !node->children().empty();
+        }
+
+        mdp::ByteBuffer getSubject(const MarkdownNodeIterator& node) const {
+
+            mdp::ByteBuffer remaining, subject = node->children().front().text;
+            subject = GetFirstLine(subject, remaining);
+            TrimString(subject);
+
+            return subject;
+        }
+    };
+
+
     /*
      * Forward Declarations
      */
@@ -105,6 +174,8 @@ namespace snowcrash {
      */
     template<typename T>
     struct SectionProcessorBase {
+
+        typedef SectionProcessor<T> SelfType;
 
         /**
          *  \brief Process section signature Markdown node
@@ -205,8 +276,8 @@ namespace snowcrash {
         static bool isDescriptionNode(const MarkdownNodeIterator& node,
                                       SectionType sectionType) {
 
-            if (SectionProcessor<T>::isContentNode(node, sectionType) ||
-                SectionProcessor<T>::nestedSectionType(node) != UndefinedSectionType) {
+            if (SelfType::isContentNode(node, sectionType) ||
+                SelfType::nestedSectionType(node) != UndefinedSectionType) {
 
                 return false;
             }
@@ -217,7 +288,7 @@ namespace snowcrash {
                 return true;
             }
 
-            SectionTypes nestedTypes = SectionProcessor<T>::nestedSectionTypes();
+            SectionTypes nestedTypes = SelfType::nestedSectionTypes();
 
             if (std::find(nestedTypes.begin(), nestedTypes.end(), keywordSectionType) != nestedTypes.end()) {
                 // Node is a keyword defined section defined in one of the nested sections
@@ -239,7 +310,7 @@ namespace snowcrash {
                                      SectionType sectionType) {
 
             SectionType keywordSectionType = SectionKeywordSignature(node);
-            SectionTypes nestedTypes = SectionProcessor<T>::nestedSectionTypes();
+            SectionTypes nestedTypes = SelfType::nestedSectionTypes();
 
             if (std::find(nestedTypes.begin(), nestedTypes.end(), keywordSectionType) != nestedTypes.end()) {
                 return true;

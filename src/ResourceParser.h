@@ -24,6 +24,17 @@ namespace snowcrash {
     /** Named resource matching regex */
     const char* const NamedResourceHeaderRegex = "^[[:blank:]]*" SYMBOL_IDENTIFIER "[[:blank:]]+\\[" URI_TEMPLATE "]$";
 
+    struct MapResourceRegexToSectionType {
+        MapRegexToSectionType operator()() const {
+            MapRegexToSectionType result;
+
+            result.insert(std::make_pair(NamedResourceHeaderRegex, ResourceSectionType));
+            result.insert(std::make_pair(ResourceHeaderRegex, ResourceSectionType));
+
+            return result;
+        }
+    };
+
     /** Internal type alias for Collection iterator of Resource */
     typedef Collection<Resource>::const_iterator ResourceIterator;
 
@@ -157,22 +168,7 @@ namespace snowcrash {
         }
 
         static SectionType sectionType(const MarkdownNodeIterator& node) {
-
-            if (node->type == mdp::HeaderMarkdownNodeType
-                && !node->text.empty()) {
-
-                CaptureGroups captureGroups;
-                mdp::ByteBuffer subject = node->text;
-
-                TrimString(subject);
-
-                if (RegexMatch(subject, NamedResourceHeaderRegex) ||
-                    RegexMatch(subject, ResourceHeaderRegex)) {
-                    return ResourceSectionType;
-                }
-            }
-
-            return UndefinedSectionType;
+            return SectionTypeParser<mdp::HeaderMarkdownNodeType, MapResourceRegexToSectionType>::sectionType(node);
         }
 
         static SectionType nestedSectionType(const MarkdownNodeIterator& node) {

@@ -21,6 +21,16 @@ namespace snowcrash {
     /** Headers matching regex */
     const char* const HeadersRegex = "^[[:blank:]]*[Hh]eaders?[[:blank:]]*$";
 
+    struct MapHeadersRegexToSectionType {
+        MapRegexToSectionType operator()() const {
+            MapRegexToSectionType result;
+
+            result.insert(std::make_pair(HeadersRegex, HeadersSectionType ));
+
+            return result;
+        }
+    };
+
     /** Header Iterator in its containment group */
     typedef Collection<Header>::const_iterator HeaderIterator;
 
@@ -159,22 +169,7 @@ namespace snowcrash {
         }
 
         static SectionType sectionType(const MarkdownNodeIterator& node) {
-
-            if (node->type == mdp::ListItemMarkdownNodeType
-                && !node->children().empty()) {
-
-                mdp::ByteBuffer subject = node->children().front().text;
-                mdp::ByteBuffer signature;
-                mdp::ByteBuffer remainingContent;
-
-                signature = GetFirstLine(subject, remainingContent);
-                TrimString(signature);
-
-                if (RegexMatch(signature, HeadersRegex))
-                    return HeadersSectionType;
-            }
-
-            return UndefinedSectionType;
+            return SectionTypeParser<mdp::ListItemMarkdownNodeType, MapHeadersRegexToSectionType>::sectionType(node);
         }
 
         static void finalize(const MarkdownNodeIterator& node,

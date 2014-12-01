@@ -21,6 +21,16 @@ namespace snowcrash {
     /** Parameter Values matching regex */
     const char* const ValuesRegex = "^[[:blank:]]*[Vv]alues[[:blank:]]*$";
 
+    struct MapValuesRegexToSectionType {
+        MapRegexToSectionType operator()() const {
+            MapRegexToSectionType result;
+
+            result.insert(std::make_pair(ValuesRegex, ValuesSectionType));
+
+            return result;
+        }
+    };
+
     /**
      * Values section processor
      */
@@ -82,19 +92,7 @@ namespace snowcrash {
         }
 
         static SectionType sectionType(const MarkdownNodeIterator& node) {
-
-            if (node->type == mdp::ListItemMarkdownNodeType
-                && !node->children().empty()) {
-
-                mdp::ByteBuffer subject = node->children().front().text;
-                TrimString(subject);
-
-                if (RegexMatch(subject, ValuesRegex)) {
-                    return ValuesSectionType;
-                }
-            }
-
-            return UndefinedSectionType;
+            return SectionTypeParser<mdp::ListItemMarkdownNodeType, MapValuesRegexToSectionType>::sectionType(node);
         }
 
         static SectionType nestedSectionType(const MarkdownNodeIterator& node) {

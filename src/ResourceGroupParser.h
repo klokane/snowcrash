@@ -17,6 +17,16 @@ namespace snowcrash {
 
     const char* const GroupHeaderRegex = "^[[:blank:]]*[Gg]roup[[:blank:]]+" SYMBOL_IDENTIFIER "[[:blank:]]*$";
 
+    struct MapGroupRegexToSectionType {
+        MapRegexToSectionType operator()() const {
+            MapRegexToSectionType result;
+
+            result.insert(std::make_pair(GroupHeaderRegex, ResourceGroupSectionType));
+
+            return result;
+        }
+    };
+
     /** Internal type alias for Collection iterator of Resource */
     typedef Collection<ResourceGroup>::const_iterator ResourceGroupIterator;
 
@@ -129,19 +139,7 @@ namespace snowcrash {
         }
 
         static SectionType sectionType(const MarkdownNodeIterator& node) {
-
-            if (node->type == mdp::HeaderMarkdownNodeType
-                && !node->text.empty()) {
-
-                mdp::ByteBuffer subject = node->text;
-                TrimString(subject);
-
-                if (RegexMatch(subject, GroupHeaderRegex)) {
-                    return ResourceGroupSectionType;
-                }
-            }
-
-            return UndefinedSectionType;
+            return SectionTypeParser<mdp::HeaderMarkdownNodeType, MapGroupRegexToSectionType>::sectionType(node);
         }
 
         static SectionType nestedSectionType(const MarkdownNodeIterator& node) {

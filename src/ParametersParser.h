@@ -20,6 +20,16 @@ namespace snowcrash {
     /** Parameters matching regex */
     const char* const ParametersRegex = "^[[:blank:]]*[Pp]arameters?[[:blank:]]*$";
 
+    struct MapParametersRegexToSectionType {
+        MapRegexToSectionType operator()() const {
+            MapRegexToSectionType result;
+
+            result.insert(std::make_pair(ParametersRegex, ParametersSectionType));
+
+            return result;
+        }
+    };
+
     /** No parameters specified message */
     const char* const NoParametersMessage = "no parameters specified, expected a nested list of parameters, one parameter per list item";
 
@@ -112,21 +122,7 @@ namespace snowcrash {
         }
 
         static SectionType sectionType(const MarkdownNodeIterator& node) {
-
-            if (node->type == mdp::ListItemMarkdownNodeType
-                && !node->children().empty()) {
-
-                mdp::ByteBuffer remaining, subject = node->children().front().text;
-
-                subject = GetFirstLine(subject, remaining);
-                TrimString(subject);
-
-                if (RegexMatch(subject, ParametersRegex)) {
-                    return ParametersSectionType;
-                }
-            }
-
-            return UndefinedSectionType;
+            return SectionTypeParser<mdp::ListItemMarkdownNodeType, MapParametersRegexToSectionType>::sectionType(node);
         }
 
         static SectionType nestedSectionType(const MarkdownNodeIterator& node) {

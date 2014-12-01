@@ -30,6 +30,17 @@ namespace snowcrash {
     /** Schema matching regex */
     const char* const SchemaRegex = "^[[:blank:]]*[Ss]chema[[:blank:]]*$";
 
+    struct MapAssetRegexToSectionType {
+        MapRegexToSectionType operator()() const {
+            MapRegexToSectionType result;
+
+            result.insert(std::make_pair(BodyRegex, BodySectionType));
+            result.insert(std::make_pair(SchemaRegex, SchemaSectionType));
+
+            return result;
+        }
+    };
+
     /**
      *  Asset Section Processor
      */
@@ -89,42 +100,9 @@ namespace snowcrash {
         }
 
         static SectionType sectionType(const MarkdownNodeIterator& node) {
-            if (node->type == mdp::ListItemMarkdownNodeType
-                && !node->children().empty()) {
-
-                AssetSignature signature = assetSignature(node);
-
-                switch (signature) {
-                    case BodyAssetSignature:
-                    case ImplicitBodyAssetSignature:
-                        return BodySectionType;
-
-                    case SchemaAssetSignature:
-                        return SchemaSectionType;
-
-                    default:
-                        return UndefinedSectionType;
-                }
-            }
-
-            return UndefinedSectionType;
+            return SectionTypeParser<mdp::ListItemMarkdownNodeType, MapAssetRegexToSectionType>::sectionType(node);
         }
 
-        /** Resolve asset signature */
-        static AssetSignature assetSignature(const MarkdownNodeIterator& node) {
-
-            mdp::ByteBuffer remaining, subject = node->children().front().text;
-            subject = GetFirstLine(subject, remaining);
-            TrimString(subject);
-
-            if (RegexMatch(subject, BodyRegex))
-                return BodyAssetSignature;
-
-            if (RegexMatch(subject, SchemaRegex))
-                return SchemaAssetSignature;
-
-            return NoAssetSignature;
-        }
     };
 
     /** Asset Section Parser */

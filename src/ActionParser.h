@@ -23,6 +23,17 @@ namespace snowcrash {
     /** Named action matching regex */
     const char* const NamedActionHeaderRegex = "^[[:blank:]]*" SYMBOL_IDENTIFIER "\\[" HTTP_REQUEST_METHOD "]$";
 
+    struct MapActionRegexToSectionType {
+        MapRegexToSectionType operator()() const {
+            MapRegexToSectionType result;
+
+            result.insert(std::make_pair(ActionHeaderRegex, ActionSectionType));
+            result.insert(std::make_pair(NamedActionHeaderRegex, ActionSectionType));
+
+            return result;
+        }
+    };
+
     /** Internal type alias for Collection iterator of Action */
     typedef Collection<Action>::const_iterator ActionIterator;
 
@@ -232,21 +243,7 @@ namespace snowcrash {
         }
 
         static SectionType sectionType(const MarkdownNodeIterator& node) {
-
-            if (node->type == mdp::HeaderMarkdownNodeType
-                && !node->text.empty()) {
-
-                mdp::ByteBuffer subject = node->text;
-                TrimString(subject);
-
-                if (RegexMatch(subject, ActionHeaderRegex) ||
-                    RegexMatch(subject, NamedActionHeaderRegex)) {
-
-                    return ActionSectionType;
-                }
-            }
-
-            return UndefinedSectionType;
+            return SectionTypeParser<mdp::HeaderMarkdownNodeType, MapActionRegexToSectionType>::sectionType(node);
         }
 
         static SectionType nestedSectionType(const MarkdownNodeIterator& node) {
