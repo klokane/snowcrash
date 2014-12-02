@@ -22,6 +22,9 @@ namespace snowcrash {
     template<typename T, typename Adapter>
     struct SectionParser {
 
+        typedef SectionProcessor<T> SectionProcessorType;
+        typedef Adapter AdapterType;
+
 
         /**
          *  \brief  Parse a section of blueprint
@@ -37,62 +40,62 @@ namespace snowcrash {
                                           const ParseResultRef<T>& out) {
 
             SectionLayout layout = DefaultSectionLayout;
-            MarkdownNodeIterator cur = Adapter::startingNode(node);
-            const MarkdownNodes& collection = Adapter::startingNodeSiblings(node, siblings);
+            MarkdownNodeIterator cur = AdapterType::startingNode(node);
+            const MarkdownNodes& collection = AdapterType::startingNodeSiblings(node, siblings);
 
             // Signature node
             MarkdownNodeIterator lastCur = cur;
-            cur = SectionProcessor<T>::processSignature(cur, collection, pd, layout, out);
+            cur = SectionProcessorType::processSignature(cur, collection, pd, layout, out);
 
             // Exclusive Nested Sections Layout
             if (layout == ExclusiveNestedSectionLayout) {
 
                 cur = parseNestedSections(cur, collection, pd, out);
 
-                SectionProcessor<T>::finalize(node, pd, out);
+                SectionProcessorType::finalize(node, pd, out);
 
-                return Adapter::nextStartingNode(node, siblings, cur);
+                return AdapterType::nextStartingNode(node, siblings, cur);
             }
 
             // Parser redirect layout
             if (layout == RedirectSectionLayout) {
-                SectionProcessor<T>::finalize(node, pd, out);
+                SectionProcessorType::finalize(node, pd, out);
 
-                return Adapter::nextStartingNode(node, siblings, cur);
+                return AdapterType::nextStartingNode(node, siblings, cur);
             }
 
             // Default layout
             if (lastCur == cur)
-                return Adapter::nextStartingNode(node, siblings, cur);
+                return AdapterType::nextStartingNode(node, siblings, cur);
 
             // Description nodes
             while(cur != collection.end() &&
-                  SectionProcessor<T>::isDescriptionNode(cur, pd.sectionContext())) {
+                  SectionProcessorType::isDescriptionNode(cur, pd.sectionContext())) {
 
                 lastCur = cur;
-                cur = SectionProcessor<T>::processDescription(cur, collection, pd, out);
+                cur = SectionProcessorType::processDescription(cur, collection, pd, out);
 
                 if (lastCur == cur)
-                    return Adapter::nextStartingNode(node, siblings, cur);
+                    return AdapterType::nextStartingNode(node, siblings, cur);
             }
 
             // Content nodes
             while(cur != collection.end() &&
-                  SectionProcessor<T>::isContentNode(cur, pd.sectionContext())) {
+                  SectionProcessorType::isContentNode(cur, pd.sectionContext())) {
 
                 lastCur = cur;
-                cur = SectionProcessor<T>::processContent(cur, collection, pd, out);
+                cur = SectionProcessorType::processContent(cur, collection, pd, out);
 
                 if (lastCur == cur)
-                    return Adapter::nextStartingNode(node, siblings, cur);
+                    return AdapterType::nextStartingNode(node, siblings, cur);
             }
 
             // Nested Sections
             cur = parseNestedSections(cur, collection, pd, out);
 
-            SectionProcessor<T>::finalize(node, pd, out);
+            SectionProcessorType::finalize(node, pd, out);
 
-            return Adapter::nextStartingNode(node, siblings, cur);
+            return AdapterType::nextStartingNode(node, siblings, cur);
         }
 
 
@@ -111,17 +114,17 @@ namespace snowcrash {
             while(cur != collection.end()) {
 
                 lastCur = cur;
-                SectionType nestedType = SectionProcessor<T>::nestedSectionType(cur);
+                SectionType nestedType = SectionProcessorType::nestedSectionType(cur);
 
                 pd.sectionsContext.push_back(nestedType);
 
                 if (nestedType != UndefinedSectionType) {
-                    cur = SectionProcessor<T>::processNestedSection(cur, collection, pd, out);
+                    cur = SectionProcessorType::processNestedSection(cur, collection, pd, out);
                 }
-                else if (Adapter::nextSkipsUnexpected ||
-                         SectionProcessor<T>::isUnexpectedNode(cur, pd.sectionContext())) {
+                else if (AdapterType::nextSkipsUnexpected ||
+                         SectionProcessorType::isUnexpectedNode(cur, pd.sectionContext())) {
 
-                    cur = SectionProcessor<T>::processUnexpectedNode(cur, collection, pd, lastSectionType, out);
+                    cur = SectionProcessorType::processUnexpectedNode(cur, collection, pd, lastSectionType, out);
                 }
 
                 if (cur != collection.end() &&
@@ -142,8 +145,22 @@ namespace snowcrash {
         }
     };
 
+    template<mdp::MarkdownNodeType NodeType>
+    struct SectionAdapter {
+        static const MarkdownNodeIterator startingNode(const MarkdownNodeIterator& seed);
+
+        static const MarkdownNodes& startingNodeSiblings(const MarkdownNodeIterator& seed,
+                                                         const MarkdownNodes& siblings);
+
+        static const MarkdownNodeIterator nextStartingNode(const MarkdownNodeIterator& seed,
+                                                           const MarkdownNodes& siblings,
+                                                           const MarkdownNodeIterator& cur);
+    };
+
     /** Parser Adapter for parsing header-defined sections */
-    struct HeaderSectionAdapter {
+    template <>
+    struct SectionAdapter<mdp::HeaderMarkdownNodeType> {
+    //struct HeaderSectionAdapter {
 
         /** \return Node to start parsing with */
         static const MarkdownNodeIterator startingNode(const MarkdownNodeIterator& seed) {
@@ -175,8 +192,12 @@ namespace snowcrash {
         static const bool nextSkipsUnexpected = false;
     };
 
+    typedef SectionAdapter<mdp::HeaderMarkdownNodeType> HeaderSectionAdapter;
+
     /** Parser Adapter for parsing list-defined sections */
-    struct ListSectionAdapter {
+    template <>
+    struct SectionAdapter<mdp::ListItemMarkdownNodeType> {
+    //struct ListSectionAdapter {
 
         static const MarkdownNodeIterator startingNode(const MarkdownNodeIterator& seed) {
             if (seed->type != mdp::ListItemMarkdownNodeType)
@@ -202,8 +223,12 @@ namespace snowcrash {
         static const bool nextSkipsUnexpected = true;
     };
 
+    typedef SectionAdapter<mdp::ListItemMarkdownNodeType> ListSectionAdapter;
+
     /** Parser Adapter for parsing blueprint sections */
-    struct BlueprintSectionAdapter {
+    template<>
+    struct SectionAdapter<mdp::RootMarkdownNodeType> {
+    //struct BlueprintSectionAdapter {
 
         /** \return Node to start parsing with */
         static const MarkdownNodeIterator startingNode(const MarkdownNodeIterator& seed) {
@@ -225,6 +250,7 @@ namespace snowcrash {
 
         static const bool nextSkipsUnexpected = false;
     };
+    typedef SectionAdapter<mdp::RootMarkdownNodeType> BlueprintSectionAdapter;
 }
 
 #endif
