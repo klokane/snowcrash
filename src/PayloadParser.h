@@ -688,7 +688,10 @@ namespace snowcrash {
     };
 
     /** Payload Section Parser */
-    typedef SectionParser<Payload, ListSectionAdapter> PayloadParser;
+    struct PayloadSectionTraits {
+        static const mdp::MarkdownNodeType MarkdownSectionType = mdp::ListItemMarkdownNodeType;
+    };
+    typedef SectionParser<Payload, PayloadSectionTraits> PayloadParser;
 }
 
 #endif

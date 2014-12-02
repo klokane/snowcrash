@@ -201,7 +201,10 @@ namespace snowcrash {
     };
 
     /** ResourceGroup Section Parser */
-    typedef SectionParser<ResourceGroup, HeaderSectionAdapter> ResourceGroupParser;
+    struct ResourceGroupSectionTraits {
+        static const mdp::MarkdownNodeType MarkdownSectionType = mdp::HeaderMarkdownNodeType;
+    };
+    typedef SectionParser<ResourceGroup, ResourceGroupSectionTraits> ResourceGroupParser;
 }
 
 #endif

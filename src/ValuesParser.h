@@ -115,7 +115,10 @@ namespace snowcrash {
     };
 
     /** Parameter Section Parser */
-    typedef SectionParser<Values, ListSectionAdapter> ValuesParser;
+    struct ValuesSectionTraits {
+        static const mdp::MarkdownNodeType MarkdownSectionType = mdp::ListItemMarkdownNodeType;
+    };
+    typedef SectionParser<Values, ValuesSectionTraits> ValuesParser;
 }
 
 #endif

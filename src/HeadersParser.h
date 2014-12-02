@@ -329,7 +329,10 @@ namespace snowcrash {
     };
 
     /** Headers Section Parser */
-    typedef SectionParser<Headers, ListSectionAdapter> HeadersParser;
+    struct HeadersSectionTraits {
+        static const mdp::MarkdownNodeType MarkdownSectionType = mdp::ListItemMarkdownNodeType;
+    };
+    typedef SectionParser<Headers, HeadersSectionTraits> HeadersParser;
 }
 
 #endif

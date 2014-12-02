@@ -492,7 +492,10 @@ namespace snowcrash {
     };
 
     /** Action Section Parser */
-    typedef SectionParser<Action, HeaderSectionAdapter> ActionParser;
+    struct ActionSectionTraits {
+        static const mdp::MarkdownNodeType MarkdownSectionType = mdp::HeaderMarkdownNodeType;
+    };
+    typedef SectionParser<Action, ActionSectionTraits> ActionParser;
 }
 
 #endif

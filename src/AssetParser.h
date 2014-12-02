@@ -106,7 +106,10 @@ namespace snowcrash {
     };
 
     /** Asset Section Parser */
-    typedef SectionParser<Asset, ListSectionAdapter> AssetParser;
+    struct AssetSectionTraits {
+        static const mdp::MarkdownNodeType MarkdownSectionType = mdp::ListItemMarkdownNodeType;
+    };
+    typedef SectionParser<Asset, AssetSectionTraits> AssetParser;
 }
 
 #endif

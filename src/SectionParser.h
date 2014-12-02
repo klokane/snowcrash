@@ -16,14 +16,17 @@
 
 namespace snowcrash {
 
+    template<mdp::MarkdownNodeType NodeType> struct SectionAdapter;
+
     /**
      *  Blueprint section parser
      */
-    template<typename T, typename Adapter>
+    template<typename T, typename SectionTypeTraits>
     struct SectionParser {
 
+        typedef SectionTypeTraits TraitsType;
         typedef SectionProcessor<T> SectionProcessorType;
-        typedef Adapter AdapterType;
+        typedef SectionAdapter<TraitsType::MarkdownSectionType> AdapterType;
 
 
         /**
@@ -191,8 +194,8 @@ namespace snowcrash {
          */
         static const bool nextSkipsUnexpected = false;
     };
-
     typedef SectionAdapter<mdp::HeaderMarkdownNodeType> HeaderSectionAdapter;
+
 
     /** Parser Adapter for parsing list-defined sections */
     template <>
@@ -222,8 +225,8 @@ namespace snowcrash {
 
         static const bool nextSkipsUnexpected = true;
     };
-
     typedef SectionAdapter<mdp::ListItemMarkdownNodeType> ListSectionAdapter;
+
 
     /** Parser Adapter for parsing blueprint sections */
     template<>

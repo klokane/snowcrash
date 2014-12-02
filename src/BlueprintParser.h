@@ -490,7 +490,10 @@ namespace snowcrash {
     };
 
     /** Blueprint Parser */
-    typedef SectionParser<Blueprint, BlueprintSectionAdapter> BlueprintParser;
+    struct BlueprintSectionTraits {
+        static const mdp::MarkdownNodeType MarkdownSectionType = mdp::RootMarkdownNodeType;
+    };
+    typedef SectionParser<Blueprint, BlueprintSectionTraits> BlueprintParser;
 }
 
 #endif
