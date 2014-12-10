@@ -12,6 +12,7 @@
 #include "SectionParserData.h"
 #include "SourceAnnotation.h"
 #include "Signature.h"
+#include "Enumlist.h"
 
 namespace snowcrash {
 
@@ -91,38 +92,58 @@ namespace snowcrash {
         ParseResultRef();
     };
 
+    template <int T> struct SignatureMatcher;
+
+    namespace signature {
+
+        const char* const Body = "^[[:blank:]]*[Bb]ody[[:blank:]]*$";
+        const char* const Schema = "^[[:blank:]]*[Ss]chema[[:blank:]]*$";
+        const char* const Headers = "^[[:blank:]]*[Hh]eaders?[[:blank:]]*$";
+        const char* const Parameters = "^[[:blank:]]*[Pp]arameters?[[:blank:]]*$";
+        const char* const Values = "^[[:blank:]]*[Vv]alues[[:blank:]]*$";
+        const char* const ResourceGroup = "^[[:blank:]]*[Gg]roup[[:blank:]]+" SYMBOL_IDENTIFIER "[[:blank:]]*$";
+
+    };
+
+#define SIGNATURE_REGEX_MATCHER( name ) \
+template<> struct SignatureMatcher<name ## SectionType> {\
+    static bool match(const std::string& subject) { return RegexMatch(subject, signature::name); }\
+    enum { Type = name ## SectionType };\
+}
+
+    SIGNATURE_REGEX_MATCHER(Body);
+    SIGNATURE_REGEX_MATCHER(Schema);
+    SIGNATURE_REGEX_MATCHER(Headers);
+    SIGNATURE_REGEX_MATCHER(Parameters);
+    SIGNATURE_REGEX_MATCHER(Values);
+    SIGNATURE_REGEX_MATCHER(ResourceGroup);
+
+#undef SIGNATURE_REGEX_MATCHER    
+
+    template<> struct SignatureMatcher<BlueprintSectionType> {
+        static bool match(const std::string& subject) { 
+            return true; 
+        }
+        enum { Type = BlueprintSectionType };
+    };
+
+
     template<mdp::MarkdownNodeType NodeType> struct SectionParserNodeAdapter;
-    typedef std::map<std::string, SectionType> MapRegexToSectionType;
 
-    template <mdp::MarkdownNodeType NodeType, typename RegexMapper>
-    struct SectionTypeParser {
-
-        typedef SectionTypeParser<NodeType, RegexMapper> SelfType;
-
-        struct match : public std::binary_function<MapRegexToSectionType::value_type, mdp::ByteBuffer, bool> {
-            bool operator()(const MapRegexToSectionType::value_type& rx, const mdp::ByteBuffer& subject) const {
-                return RegexMatch(subject, rx.first);
-            }
-        };
-
-        static SectionType sectionType(const MarkdownNodeIterator& node){ 
-
-            SectionParserNodeAdapter<NodeType> adapter;
-
-            if (!adapter.validMarkdownType(node)) return UndefinedSectionType;
-
-            mdp::ByteBuffer subject = adapter.getSubject(node);
-
-            MapRegexToSectionType types = RegexMapper()();
-
-            MapRegexToSectionType::iterator it = std::find_if(types.begin(), types.end(), std::bind2nd(SelfType::match(), subject));
-
-            if(it == types.end()) return UndefinedSectionType; 
-                
-            return it->second;
+    template<typename Typelist> struct MatchSection {
+        static SectionType match(const mdp::ByteBuffer& subject) {
+            if(SignatureMatcher<Typelist::head>::match(subject)) { 
+                return (SectionType)Typelist::head;
+            } 
+            return MatchSection<typename Typelist::tail>::match(subject);
         }
     };
 
+    template<> struct MatchSection<EnumList<> > {
+        static SectionType match(const mdp::ByteBuffer subject) {
+          return UndefinedSectionType;
+        }
+    };
 
     template<mdp::MarkdownNodeType NodeType>
     struct SectionParserNodeAdapter {
@@ -159,11 +180,21 @@ namespace snowcrash {
         }
     };
 
+    template<> struct SectionParserNodeAdapter<mdp::RootMarkdownNodeType> {
+        bool validMarkdownType(const MarkdownNodeIterator& node) const {
+            return true;
+        }
+
+        mdp::ByteBuffer getSubject(const MarkdownNodeIterator& node) const {
+            return mdp::ByteBuffer();
+        }
+    };
+
 
     /*
      * Forward Declarations
      */
-    template<typename T>
+    template<typename T, typename SectionTypeTraits>
     struct SectionProcessor;
 
     /**
@@ -172,10 +203,12 @@ namespace snowcrash {
      *  Defines section processor interface alongised with its default
      *  behavior.
      */
-    template<typename T>
+    template<typename T, typename SectionTypeTraits>
     struct SectionProcessorBase {
 
-        typedef SectionProcessor<T> SelfType;
+        typedef SectionTypeTraits TraitsType;
+        typedef SectionProcessor<T, TraitsType> SelfType;
+        typedef SectionProcessorBase<T, TraitsType> BaseType;
 
         /**
          *  \brief Process section signature Markdown node
@@ -326,7 +359,11 @@ namespace snowcrash {
 
         /** \return %SectionType of the node */
         static SectionType sectionType(const MarkdownNodeIterator& node) {
-            return UndefinedSectionType;
+            SectionParserNodeAdapter<TraitsType::MarkdownNodeType> adapter;
+            if(!adapter.validMarkdownType(node)) return UndefinedSectionType;
+
+            mdp::ByteBuffer subject = adapter.getSubject(node);
+            return MatchSection<typename TraitsType::SectionTypes>::match(subject);
         }
 
         /** \return Nested %SectionType of the node */
@@ -338,8 +375,8 @@ namespace snowcrash {
     /**
      *  Default Section Processor
      */
-    template<typename T>
-    struct SectionProcessor : public SectionProcessorBase<T> {
+    template<typename T, typename SectionTypeTraits>
+    struct SectionProcessor : public SectionProcessorBase<T, SectionTypeTraits> {
     };
 }
 

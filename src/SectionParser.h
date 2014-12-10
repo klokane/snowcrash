@@ -25,8 +25,8 @@ namespace snowcrash {
     struct SectionParser {
 
         typedef SectionTypeTraits TraitsType;
-        typedef SectionProcessor<T> SectionProcessorType;
-        typedef SectionAdapter<TraitsType::MarkdownSectionType> AdapterType;
+        typedef SectionProcessor<T, TraitsType> SectionProcessorType;
+        typedef SectionAdapter<TraitsType::MarkdownNodeType> AdapterType;
 
 
         /**

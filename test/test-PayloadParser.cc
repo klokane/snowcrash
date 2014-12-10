@@ -45,7 +45,7 @@ TEST_CASE("recognize request signature", "[payload]")
     markdownParser.parse(RequestFixture, markdownAST);
 
     REQUIRE(!markdownAST.children().empty());
-    SectionType sectionType = SectionProcessor<Payload>::sectionType(markdownAST.children().begin());
+    SectionType sectionType = PayloadProcessor::sectionType(markdownAST.children().begin());
     REQUIRE(sectionType == RequestSectionType);
 }
 
@@ -56,7 +56,7 @@ TEST_CASE("recognize abbreviated request signature", "[payload]")
     markdownParser.parse(RequestBodyFixture, markdownAST);
 
     REQUIRE(!markdownAST.children().empty());
-    SectionType sectionType = SectionProcessor<Payload>::sectionType(markdownAST.children().begin());
+    SectionType sectionType = PayloadProcessor::sectionType(markdownAST.children().begin());
     REQUIRE(sectionType == RequestBodySectionType);
 }
 
@@ -67,7 +67,7 @@ TEST_CASE("recognize abbreviated response signature", "[payload]")
     markdownParser.parse(ResponseBodyFixture, markdownAST);
 
     REQUIRE(!markdownAST.children().empty());
-    SectionType sectionType = SectionProcessor<Payload>::sectionType(markdownAST.children().begin());
+    SectionType sectionType = PayloadProcessor::sectionType(markdownAST.children().begin());
     REQUIRE(sectionType == ResponseBodySectionType);
 }
 
@@ -78,7 +78,7 @@ TEST_CASE("recognize empty body response signature as non-abbreviated", "[payloa
     markdownParser.parse(EmptyBodyFixture, markdownAST);
 
     REQUIRE(!markdownAST.children().empty());
-    SectionType sectionType = SectionProcessor<Payload>::sectionType(markdownAST.children().begin());
+    SectionType sectionType = PayloadProcessor::sectionType(markdownAST.children().begin());
     REQUIRE(sectionType == ResponseSectionType);
 }
 

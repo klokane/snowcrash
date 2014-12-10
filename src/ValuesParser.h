@@ -21,21 +21,16 @@ namespace snowcrash {
     /** Parameter Values matching regex */
     const char* const ValuesRegex = "^[[:blank:]]*[Vv]alues[[:blank:]]*$";
 
-    struct MapValuesRegexToSectionType {
-        MapRegexToSectionType operator()() const {
-            MapRegexToSectionType result;
-
-            result.insert(std::make_pair(ValuesRegex, ValuesSectionType));
-
-            return result;
-        }
+    struct ValuesSectionTraits {
+        static const mdp::MarkdownNodeType MarkdownNodeType = mdp::ListItemMarkdownNodeType;
+        typedef EnumList<ValuesSectionType> SectionTypes;
     };
 
     /**
      * Values section processor
      */
     template<>
-    struct SectionProcessor<Values> : public SectionProcessorBase<Values> {
+    struct SectionProcessor<Values, ValuesSectionTraits> : public SectionProcessorBase<Values, ValuesSectionTraits> {
 
         static MarkdownNodeIterator processNestedSection(const MarkdownNodeIterator& node,
                                                          const MarkdownNodes& siblings,
@@ -91,10 +86,6 @@ namespace snowcrash {
             return false;
         }
 
-        static SectionType sectionType(const MarkdownNodeIterator& node) {
-            return SectionTypeParser<mdp::ListItemMarkdownNodeType, MapValuesRegexToSectionType>::sectionType(node);
-        }
-
         static SectionType nestedSectionType(const MarkdownNodeIterator& node) {
 
             if (node->type == mdp::ListItemMarkdownNodeType
@@ -115,9 +106,7 @@ namespace snowcrash {
     };
 
     /** Parameter Section Parser */
-    struct ValuesSectionTraits {
-        static const mdp::MarkdownNodeType MarkdownSectionType = mdp::ListItemMarkdownNodeType;
-    };
+    typedef SectionProcessor<Values, ValuesSectionTraits> ValuesProcessor;
     typedef SectionParser<Values, ValuesSectionTraits> ValuesParser;
 }
 

@@ -30,7 +30,7 @@ TEST_CASE("Recognize Parameters section block", "[parameters]")
     markdownParser.parse(ParametersFixture, markdownAST);
 
     REQUIRE(!markdownAST.children().empty());
-    SectionType sectionType = SectionProcessor<Parameters>::sectionType(markdownAST.children().begin());
+    SectionType sectionType = ParametersProcessor::sectionType(markdownAST.children().begin());
     REQUIRE(sectionType == ParametersSectionType);
 }
 

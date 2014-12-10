@@ -29,7 +29,7 @@ TEST_CASE("recognize explicit body signature", "[asset]")
     markdownParser.parse(BodyAssetFixture, markdownAST);
 
     REQUIRE(!markdownAST.children().empty());
-    SectionType sectionType = SectionProcessor<Asset>::sectionType(markdownAST.children().begin());
+    SectionType sectionType = AssetProcessor::sectionType(markdownAST.children().begin());
     REQUIRE(sectionType == BodySectionType);
 }
 
@@ -44,7 +44,7 @@ TEST_CASE("recognize body with content on signature", "[asset]")
     markdownParser.parse(source, markdownAST);
 
     REQUIRE(!markdownAST.children().empty());
-    SectionType sectionType = SectionProcessor<Asset>::sectionType(markdownAST.children().begin());
+    SectionType sectionType = AssetProcessor::sectionType(markdownAST.children().begin());
     REQUIRE(sectionType == BodySectionType);
 }
 
@@ -55,7 +55,7 @@ TEST_CASE("recognize schema signature", "[asset]")
     markdownParser.parse(SchemaAssetFixture, markdownAST);
 
     REQUIRE(!markdownAST.children().empty());
-    SectionType sectionType = SectionProcessor<Asset>::sectionType(markdownAST.children().begin());
+    SectionType sectionType = AssetProcessor::sectionType(markdownAST.children().begin());
     REQUIRE(sectionType == SchemaSectionType);
 }
 

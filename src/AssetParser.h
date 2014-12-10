@@ -30,22 +30,16 @@ namespace snowcrash {
     /** Schema matching regex */
     const char* const SchemaRegex = "^[[:blank:]]*[Ss]chema[[:blank:]]*$";
 
-    struct MapAssetRegexToSectionType {
-        MapRegexToSectionType operator()() const {
-            MapRegexToSectionType result;
-
-            result.insert(std::make_pair(BodyRegex, BodySectionType));
-            result.insert(std::make_pair(SchemaRegex, SchemaSectionType));
-
-            return result;
-        }
+    struct AssetSectionTraits {
+        static const mdp::MarkdownNodeType MarkdownNodeType = mdp::ListItemMarkdownNodeType;
+        typedef EnumList<BodySectionType, SchemaSectionType>  SectionTypes;
     };
 
     /**
      *  Asset Section Processor
      */
     template<>
-    struct SectionProcessor<Asset> : public SectionProcessorBase<Asset> {
+    struct SectionProcessor<Asset, AssetSectionTraits> : public SectionProcessorBase<Asset, AssetSectionTraits> {
 
         static MarkdownNodeIterator processSignature(const MarkdownNodeIterator& node,
                                                      const MarkdownNodes& siblings,
@@ -99,16 +93,10 @@ namespace snowcrash {
             return (SectionKeywordSignature(node) == UndefinedSectionType);
         }
 
-        static SectionType sectionType(const MarkdownNodeIterator& node) {
-            return SectionTypeParser<mdp::ListItemMarkdownNodeType, MapAssetRegexToSectionType>::sectionType(node);
-        }
-
     };
 
     /** Asset Section Parser */
-    struct AssetSectionTraits {
-        static const mdp::MarkdownNodeType MarkdownSectionType = mdp::ListItemMarkdownNodeType;
-    };
+    typedef SectionProcessor<Asset, AssetSectionTraits> AssetProcessor;
     typedef SectionParser<Asset, AssetSectionTraits> AssetParser;
 }
 

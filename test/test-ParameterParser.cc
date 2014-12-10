@@ -27,7 +27,7 @@ TEST_CASE("Recognize parameter definition signature", "[parameter]")
     markdownParser.parse(ParameterFixture, markdownAST);
 
     REQUIRE(!markdownAST.children().empty());
-    SectionType sectionType = SectionProcessor<Parameter>::sectionType(markdownAST.children().begin());
+    SectionType sectionType = ParameterProcessor::sectionType(markdownAST.children().begin());
     REQUIRE(sectionType == ParameterSectionType);
 }
 

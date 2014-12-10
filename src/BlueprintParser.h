@@ -22,11 +22,16 @@ namespace snowcrash {
     /** Internal type alias for Collection iterator of Metadata */
     typedef Collection<Metadata>::iterator MetadataCollectionIterator;
 
+    struct BlueprintSectionTraits {
+        static const mdp::MarkdownNodeType MarkdownNodeType = mdp::RootMarkdownNodeType;
+        typedef EnumList<BlueprintSectionType> SectionTypes;
+    };
+
     /**
      * Blueprint processor
      */
     template<>
-    struct SectionProcessor<Blueprint> : public SectionProcessorBase<Blueprint> {
+    struct SectionProcessor<Blueprint, BlueprintSectionTraits> : public SectionProcessorBase<Blueprint, BlueprintSectionTraits> {
 
         static MarkdownNodeIterator processSignature(const MarkdownNodeIterator& node,
                                                      const MarkdownNodes& siblings,
@@ -134,24 +139,19 @@ namespace snowcrash {
             return node;
         }
 
-        static SectionType sectionType(const MarkdownNodeIterator& node) {
-
-            return BlueprintSectionType;
-        }
-
         static SectionType nestedSectionType(const MarkdownNodeIterator& node) {
 
             SectionType nestedType = UndefinedSectionType;
 
             // Check if Resource section
-            nestedType = SectionProcessor<Resource>::sectionType(node);
+            nestedType = ResourceProcessor::sectionType(node);
 
             if (nestedType != UndefinedSectionType) {
                 return nestedType;
             }
 
             // Check if ResourceGroup section
-            nestedType = SectionProcessor<ResourceGroup>::sectionType(node);
+            nestedType = ResourceGroupProcessor::sectionType(node);
 
             if (nestedType != UndefinedSectionType) {
                 return nestedType;
@@ -165,7 +165,7 @@ namespace snowcrash {
 
             // Resource Group & descendants
             nested.push_back(ResourceGroupSectionType);
-            SectionTypes types = SectionProcessor<ResourceGroup>::nestedSectionTypes();
+            SectionTypes types = ResourceGroupProcessor::nestedSectionTypes();
             nested.insert(nested.end(), types.begin(), types.end());
 
             return nested;
@@ -405,14 +405,14 @@ namespace snowcrash {
 
                         ParseResultRef<Payload> payload(out.report, *requestIt, *requestSourceMapIt);
                         resolvePendingModels(pd, payload);
-                        SectionProcessor<Payload>::checkRequest(requestIt->reference.meta.node, pd, payload);
+                        PayloadProcessor::checkRequest(requestIt->reference.meta.node, pd, payload);
                     }
                     else {
 
                         SourceMap<Payload> tempSourceMap;
                         ParseResultRef<Payload> payload(out.report, *requestIt, tempSourceMap);
                         resolvePendingModels(pd, payload);
-                        SectionProcessor<Payload>::checkRequest(requestIt->reference.meta.node, pd, payload);
+                        PayloadProcessor::checkRequest(requestIt->reference.meta.node, pd, payload);
                     }
                 }
 
@@ -445,14 +445,14 @@ namespace snowcrash {
 
                         ParseResultRef<Payload> payload(out.report, *responseIt, *responseSourceMapIt);
                         resolvePendingModels(pd, payload);
-                        SectionProcessor<Payload>::checkResponse(responseIt->reference.meta.node, pd, payload);
+                        PayloadProcessor::checkResponse(responseIt->reference.meta.node, pd, payload);
                     }
                     else {
 
                         SourceMap<Payload> tempSourceMap;
                         ParseResultRef<Payload> payload(out.report, *responseIt, tempSourceMap);
                         resolvePendingModels(pd, payload);
-                        SectionProcessor<Payload>::checkResponse(responseIt->reference.meta.node, pd, payload);
+                        PayloadProcessor::checkResponse(responseIt->reference.meta.node, pd, payload);
                     }
                 }
 
@@ -484,15 +484,13 @@ namespace snowcrash {
             else {
 
                 out.node.reference.meta.state = Reference::StateResolved;
-                SectionProcessor<Payload>::assingReferredPayload(pd, out);
+                PayloadProcessor::assingReferredPayload(pd, out);
             }
         }
     };
 
     /** Blueprint Parser */
-    struct BlueprintSectionTraits {
-        static const mdp::MarkdownNodeType MarkdownSectionType = mdp::RootMarkdownNodeType;
-    };
+    typedef SectionProcessor<Blueprint, BlueprintSectionTraits> BlueprintProcessor;
     typedef SectionParser<Blueprint, BlueprintSectionTraits> BlueprintParser;
 }
 

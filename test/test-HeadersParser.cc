@@ -30,7 +30,7 @@ TEST_CASE("recognize headers signature", "[headers]")
     markdownParser.parse(HeadersFixture, markdownAST);
 
     REQUIRE(!markdownAST.children().empty());
-    SectionType sectionType = SectionProcessor<Headers>::sectionType(markdownAST.children().begin());
+    SectionType sectionType = HeadersProcessor::sectionType(markdownAST.children().begin());
     REQUIRE(sectionType == HeadersSectionType);
 }
 

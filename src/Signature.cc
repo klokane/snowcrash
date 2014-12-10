@@ -23,19 +23,19 @@ SectionType snowcrash::SectionKeywordSignature(const mdp::MarkdownNodeIterator& 
     // Note: Every-keyword defined section should be listed here...
     SectionType type = UndefinedSectionType;
 
-    if ((type = SectionProcessor<Headers>::sectionType(node)) != UndefinedSectionType)
+    if ((type = HeadersProcessor::sectionType(node)) != UndefinedSectionType)
         return type;
 
-    if ((type = SectionProcessor<Asset>::sectionType(node)) != UndefinedSectionType)
+    if ((type = AssetProcessor::sectionType(node)) != UndefinedSectionType)
         return type;
 
-    if ((type = SectionProcessor<Payload>::sectionType(node)) != UndefinedSectionType)
+    if ((type = PayloadProcessor::sectionType(node)) != UndefinedSectionType)
         return type;
 
-    if ((type = SectionProcessor<Values>::sectionType(node)) != UndefinedSectionType)
+    if ((type = ValuesProcessor::sectionType(node)) != UndefinedSectionType)
         return type;
 
-    if ((type = SectionProcessor<Parameters>::sectionType(node)) != UndefinedSectionType)
+    if ((type = ParametersProcessor::sectionType(node)) != UndefinedSectionType)
         return type;
 
     /*
@@ -44,13 +44,13 @@ SectionType snowcrash::SectionKeywordSignature(const mdp::MarkdownNodeIterator& 
      *  This is because an HTTP Request Method + URI is recognized as both %ActionSectionType and %ResourceSectionType.
      *  This is not optimal and should be addressed in the future.
      */
-    if ((type = SectionProcessor<Resource>::sectionType(node)) != UndefinedSectionType)
+    if ((type = ResourceProcessor::sectionType(node)) != UndefinedSectionType)
         return type;
 
-    if ((type = SectionProcessor<Action>::sectionType(node)) != UndefinedSectionType)
+    if ((type = ActionProcessor::sectionType(node)) != UndefinedSectionType)
         return type;
 
-    if ((type = SectionProcessor<ResourceGroup>::sectionType(node)) != UndefinedSectionType)
+    if ((type = ResourceGroupProcessor::sectionType(node)) != UndefinedSectionType)
         return type;
 
     return type;

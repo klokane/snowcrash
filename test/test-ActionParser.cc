@@ -26,13 +26,13 @@ TEST_CASE("Method block classifier", "[action]")
     markdownParser.parse(ActionFixture, markdownAST);
 
     REQUIRE(!markdownAST.children().empty());
-    sectionType = SectionProcessor<Action>::sectionType(markdownAST.children().begin());
+    sectionType = ActionProcessor::sectionType(markdownAST.children().begin());
     REQUIRE(sectionType == ActionSectionType);
 
     // Nameless method
     markdownAST.children().front().text = "GET";
     REQUIRE(!markdownAST.children().empty());
-    sectionType = SectionProcessor<Action>::sectionType(markdownAST.children().begin());
+    sectionType = ActionProcessor::sectionType(markdownAST.children().begin());
     REQUIRE(sectionType == ActionSectionType);
 }
 

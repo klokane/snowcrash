@@ -24,15 +24,17 @@ namespace snowcrash {
     /** Named resource matching regex */
     const char* const NamedResourceHeaderRegex = "^[[:blank:]]*" SYMBOL_IDENTIFIER "[[:blank:]]+\\[" URI_TEMPLATE "]$";
 
-    struct MapResourceRegexToSectionType {
-        MapRegexToSectionType operator()() const {
-            MapRegexToSectionType result;
-
-            result.insert(std::make_pair(NamedResourceHeaderRegex, ResourceSectionType));
-            result.insert(std::make_pair(ResourceHeaderRegex, ResourceSectionType));
-
-            return result;
+    template<> struct SignatureMatcher<ResourceSectionType> {
+        static bool match(const std::string& subject) { 
+            return RegexMatch(subject, NamedResourceHeaderRegex) 
+                || RegexMatch(subject, ResourceHeaderRegex);
         }
+        enum { Type = ResourceSectionType };
+    };
+
+    struct ResourceSectionTraits {
+        static const mdp::MarkdownNodeType MarkdownNodeType = mdp::HeaderMarkdownNodeType;
+        typedef EnumList<ResourceSectionType> SectionTypes;
     };
 
     /** Internal type alias for Collection iterator of Resource */
@@ -42,7 +44,8 @@ namespace snowcrash {
      * Resource Section processor
      */
     template<>
-    struct SectionProcessor<Resource> : public SectionProcessorBase<Resource> {
+    struct SectionProcessor<Resource, ResourceSectionTraits> : public SectionProcessorBase<Resource, ResourceSectionTraits> {
+        typedef SectionProcessorBase<Resource, ResourceSectionTraits> BaseType;
 
         static MarkdownNodeIterator processSignature(const MarkdownNodeIterator& node,
                                                      const MarkdownNodes& siblings,
@@ -113,7 +116,7 @@ namespace snowcrash {
                 case HeadersSectionType:
                 {
                     ParseResultRef<Headers> headers(out.report, out.node.headers, out.sourceMap.headers);
-                    return SectionProcessor<Action>::handleDeprecatedHeaders(node, siblings, pd, headers);
+                    return ActionProcessor::handleDeprecatedHeaders(node, siblings, pd, headers);
                 }
 
                 default:
@@ -154,21 +157,17 @@ namespace snowcrash {
                 return ++MarkdownNodeIterator(node);
             }
 
-            return SectionProcessorBase<Resource>::processUnexpectedNode(node, siblings, pd, sectionType, out);
+            return BaseType::processUnexpectedNode(node, siblings, pd, sectionType, out);
         }
 
         static bool isDescriptionNode(const MarkdownNodeIterator& node,
                                       SectionType sectionType) {
 
-            if (SectionProcessor<Action>::actionType(node) == CompleteActionType) {
+            if (ActionProcessor::actionType(node) == CompleteActionType) {
                 return false;
             }
 
-            return SectionProcessorBase<Resource>::isDescriptionNode(node, sectionType);
-        }
-
-        static SectionType sectionType(const MarkdownNodeIterator& node) {
-            return SectionTypeParser<mdp::HeaderMarkdownNodeType, MapResourceRegexToSectionType>::sectionType(node);
+            return BaseType::isDescriptionNode(node, sectionType);
         }
 
         static SectionType nestedSectionType(const MarkdownNodeIterator& node) {
@@ -176,21 +175,21 @@ namespace snowcrash {
             SectionType nestedType = UndefinedSectionType;
 
             // Check if parameters section
-            nestedType = SectionProcessor<Parameters>::sectionType(node);
+            nestedType = ParametersProcessor::sectionType(node);
 
             if (nestedType != UndefinedSectionType) {
                 return nestedType;
             }
 
             // Check if headers section
-            nestedType = SectionProcessor<Headers>::sectionType(node);
+            nestedType = HeadersProcessor::sectionType(node);
 
             if (nestedType == HeadersSectionType) {
                 return nestedType;
             }
 
             // Check if model section
-            nestedType = SectionProcessor<Payload>::sectionType(node);
+            nestedType = PayloadProcessor::sectionType(node);
 
             if (nestedType == ModelSectionType ||
                 nestedType == ModelBodySectionType) {
@@ -199,13 +198,13 @@ namespace snowcrash {
             }
 
             // Check if action section
-            nestedType = SectionProcessor<Action>::sectionType(node);
+            nestedType = ActionProcessor::sectionType(node);
 
             if (nestedType == ActionSectionType) {
 
                 // Do not consider complete actions as nested
                 mdp::ByteBuffer method;
-                if (SectionProcessor<Action>::actionType(node) == CompleteActionType)
+                if (ActionProcessor::actionType(node) == CompleteActionType)
                     return UndefinedSectionType;
 
                 return nestedType;
@@ -219,7 +218,7 @@ namespace snowcrash {
 
             // Action & descendants
             nested.push_back(ActionSectionType);
-            SectionTypes types = SectionProcessor<Action>::nestedSectionTypes();
+            SectionTypes types = ActionProcessor::nestedSectionTypes();
             nested.insert(nested.end(), types.begin(), types.end());
 
             nested.push_back(ModelSectionType);
@@ -255,7 +254,7 @@ namespace snowcrash {
                      actIt != out.node.actions.end();
                      ++actIt, ++actSMIt) {
 
-                    SectionProcessor<Headers>::injectDeprecatedHeaders(pd, out.node.headers, out.sourceMap.headers, actIt->examples, actSMIt->examples);
+                    HeadersProcessor::injectDeprecatedHeaders(pd, out.node.headers, out.sourceMap.headers, actIt->examples, actSMIt->examples);
                 }
 
                 out.node.headers.clear();
@@ -276,7 +275,7 @@ namespace snowcrash {
 
             MarkdownNodeIterator cur = ActionParser::parse(node, siblings, pd, action);
 
-            ActionIterator duplicate = SectionProcessor<Action>::findAction(out.node.actions, action.node);
+            ActionIterator duplicate = ActionProcessor::findAction(out.node.actions, action.node);
 
             if (duplicate != out.node.actions.end()) {
 
@@ -455,9 +454,7 @@ namespace snowcrash {
     };
 
     /** Resource Section Parser */
-    struct ResourceSectionTraits {
-        static const mdp::MarkdownNodeType MarkdownSectionType = mdp::HeaderMarkdownNodeType;
-    };
+    typedef SectionProcessor<Resource, ResourceSectionTraits> ResourceProcessor;
     typedef SectionParser<Resource, ResourceSectionTraits> ResourceParser;
 }
 

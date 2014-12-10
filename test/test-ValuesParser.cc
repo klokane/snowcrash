@@ -26,7 +26,7 @@ TEST_CASE("Recognize values signature", "[values]")
     markdownParser.parse(ValuesFixture, markdownAST);
 
     REQUIRE(!markdownAST.children().empty());
-    SectionType sectionType = SectionProcessor<Values>::sectionType(markdownAST.children().begin());
+    SectionType sectionType = ValuesProcessor::sectionType(markdownAST.children().begin());
     REQUIRE(sectionType == ValuesSectionType);
 }
 

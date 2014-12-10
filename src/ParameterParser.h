@@ -49,11 +49,16 @@ namespace snowcrash {
     /** Parameter description delimiter */
     const std::string DescriptionIdentifier = "...";
 
+    struct ParameterSectionTraits {
+        static const mdp::MarkdownNodeType MarkdownNodeType = mdp::ListItemMarkdownNodeType;
+        typedef EnumList<ParameterSectionType> SectionTypes;
+    };
+
     /**
      * Parameter section processor
      */
     template<>
-    struct SectionProcessor<Parameter> : public SectionProcessorBase<Parameter> {
+    struct SectionProcessor<Parameter, ParameterSectionTraits> : public SectionProcessorBase<Parameter, ParameterSectionTraits> {
 
         static MarkdownNodeIterator processSignature(const MarkdownNodeIterator& node,
                                                      const MarkdownNodes& siblings,
@@ -130,26 +135,9 @@ namespace snowcrash {
             return ++MarkdownNodeIterator(node);
         }
 
-        static SectionType sectionType(const MarkdownNodeIterator& node) {
-
-            if (node->type == mdp::ListItemMarkdownNodeType
-                && !node->children().empty()) {
-
-                mdp::ByteBuffer subject, remainingContent;
-                subject = GetFirstLine(node->children().front().text, remainingContent);
-                TrimString(subject);
-
-                if (isValidParameterSignature(subject)) {
-                    return ParameterSectionType;
-                }
-            }
-
-            return UndefinedSectionType;
-        }
-
         static SectionType nestedSectionType(const MarkdownNodeIterator& node) {
 
-            return SectionProcessor<Values>::sectionType(node);
+            return ValuesProcessor::sectionType(node);
         }
 
         static SectionTypes nestedSectionTypes() {
@@ -465,10 +453,16 @@ namespace snowcrash {
     };
 
     /** Parameter Section Parser */
-    struct ParameterSectionTraits {
-        static const mdp::MarkdownNodeType MarkdownSectionType = mdp::ListItemMarkdownNodeType;
-    };
+    typedef SectionProcessor<Parameter, ParameterSectionTraits> ParameterProcessor;
     typedef SectionParser<Parameter, ParameterSectionTraits> ParameterParser;
+
+    template<> struct SignatureMatcher<ParameterSectionType> {
+        static bool match(const std::string& subject) { 
+            return ParameterProcessor::isValidParameterSignature(subject);
+        }
+        enum { Type = ParameterSectionType };
+    };
+
 }
 
 #endif

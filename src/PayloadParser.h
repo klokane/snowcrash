@@ -42,11 +42,16 @@ namespace snowcrash {
     /** Model matching regex */
     const char* const  ModelRegex = "^[[:blank:]]*(" SYMBOL_IDENTIFIER "[[:blank:]]+)?[Mm]odel" MEDIA_TYPE "?[[:blank:]]*$";
 
+    struct PayloadSectionTraits {
+        static const mdp::MarkdownNodeType MarkdownNodeType = mdp::ListItemMarkdownNodeType;
+    };
+
     /**
      * Payload Section Processor
      */
     template<>
-    struct SectionProcessor<Payload> : public SectionProcessorBase<Payload> {
+    struct SectionProcessor<Payload, PayloadSectionTraits> : public SectionProcessorBase<Payload, PayloadSectionTraits> {
+        typedef SectionProcessorBase<Payload, PayloadSectionTraits> BaseType;
 
         static MarkdownNodeIterator processSignature(const MarkdownNodeIterator& node,
                                                      const MarkdownNodes& siblings,
@@ -201,14 +206,14 @@ namespace snowcrash {
                 return ++MarkdownNodeIterator(node);
             }
 
-            return SectionProcessorBase<Payload>::processUnexpectedNode(node, siblings, pd, sectionType, out);
+            return BaseType::processUnexpectedNode(node, siblings, pd, sectionType, out);
         }
 
         static bool isDescriptionNode(const MarkdownNodeIterator& node,
                                       SectionType sectionType) {
 
             if (!isAbbreviated(sectionType) &&
-                SectionProcessorBase<Payload>::isDescriptionNode(node, sectionType)) {
+                BaseType::isDescriptionNode(node, sectionType)) {
 
                 return true;
             }
@@ -263,14 +268,14 @@ namespace snowcrash {
             SectionType nestedType = UndefinedSectionType;
 
             // Check if headers section
-            nestedType = SectionProcessor<Headers>::sectionType(node);
+            nestedType = HeadersProcessor::sectionType(node);
 
             if (nestedType != UndefinedSectionType) {
                 return nestedType;
             }
 
             // Check if asset section
-            nestedType = SectionProcessor<Asset>::sectionType(node);
+            nestedType = AssetProcessor::sectionType(node);
 
             if (nestedType != UndefinedSectionType) {
                 return nestedType;
@@ -288,7 +293,7 @@ namespace snowcrash {
 
             // Parameters & descendants
             nested.push_back(ParametersSectionType);
-            types = SectionProcessor<Parameters>::nestedSectionTypes();
+            types = ParametersProcessor::nestedSectionTypes();
             nested.insert(nested.end(), types.begin(), types.end());
 
             return nested;
@@ -688,9 +693,7 @@ namespace snowcrash {
     };
 
     /** Payload Section Parser */
-    struct PayloadSectionTraits {
-        static const mdp::MarkdownNodeType MarkdownSectionType = mdp::ListItemMarkdownNodeType;
-    };
+    typedef SectionProcessor<Payload, PayloadSectionTraits> PayloadProcessor;
     typedef SectionParser<Payload, PayloadSectionTraits> PayloadParser;
 }
 

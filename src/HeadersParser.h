@@ -21,14 +21,9 @@ namespace snowcrash {
     /** Headers matching regex */
     const char* const HeadersRegex = "^[[:blank:]]*[Hh]eaders?[[:blank:]]*$";
 
-    struct MapHeadersRegexToSectionType {
-        MapRegexToSectionType operator()() const {
-            MapRegexToSectionType result;
-
-            result.insert(std::make_pair(HeadersRegex, HeadersSectionType ));
-
-            return result;
-        }
+    struct HeadersSectionTraits {
+        static const mdp::MarkdownNodeType MarkdownNodeType = mdp::ListItemMarkdownNodeType;
+        typedef EnumList<HeadersSectionType> SectionTypes;
     };
 
     /** Header Iterator in its containment group */
@@ -119,7 +114,7 @@ namespace snowcrash {
      *  Headers Section Processor
      */
     template<>
-    struct SectionProcessor<Headers> : public SectionProcessorBase<Headers> {
+    struct SectionProcessor<Headers, HeadersSectionTraits> : public SectionProcessorBase<Headers, HeadersSectionTraits> {
 
         static MarkdownNodeIterator processSignature(const MarkdownNodeIterator& node,
                                                      const MarkdownNodes& siblings,
@@ -166,10 +161,6 @@ namespace snowcrash {
                                   SectionType sectionType) {
 
             return (SectionKeywordSignature(node) == UndefinedSectionType);
-        }
-
-        static SectionType sectionType(const MarkdownNodeIterator& node) {
-            return SectionTypeParser<mdp::ListItemMarkdownNodeType, MapHeadersRegexToSectionType>::sectionType(node);
         }
 
         static void finalize(const MarkdownNodeIterator& node,
@@ -329,9 +320,7 @@ namespace snowcrash {
     };
 
     /** Headers Section Parser */
-    struct HeadersSectionTraits {
-        static const mdp::MarkdownNodeType MarkdownSectionType = mdp::ListItemMarkdownNodeType;
-    };
+    typedef SectionProcessor<Headers, HeadersSectionTraits> HeadersProcessor;
     typedef SectionParser<Headers, HeadersSectionTraits> HeadersParser;
 }
 

@@ -39,22 +39,22 @@ TEST_CASE("Resource block classifier", "[resource]")
     markdownParser.parse(ResourceFixture, markdownAST);
 
     REQUIRE(!markdownAST.children().empty());
-    sectionType = SectionProcessor<Resource>::sectionType(markdownAST.children().begin());
+    sectionType = ResourceProcessor::sectionType(markdownAST.children().begin());
     REQUIRE(sectionType == ResourceSectionType);
 
     // Nameless resource: "/resource"
     markdownAST.children().front().text = "/resource";
-    sectionType = SectionProcessor<Resource>::sectionType(markdownAST.children().begin());
+    sectionType = ResourceProcessor::sectionType(markdownAST.children().begin());
     REQUIRE(sectionType == ResourceSectionType);
 
     // Keyword "group"
     markdownAST.children().front().text = "Group A";
-    sectionType = SectionProcessor<Resource>::sectionType(markdownAST.children().begin());
+    sectionType = ResourceProcessor::sectionType(markdownAST.children().begin());
     REQUIRE(sectionType == UndefinedSectionType);
 
     // Resource Method
     markdownAST.children().front().text = "GET /resource";
-    sectionType = SectionProcessor<Resource>::sectionType(markdownAST.children().begin());
+    sectionType = ResourceProcessor::sectionType(markdownAST.children().begin());
     REQUIRE(sectionType == ResourceSectionType);
 }
 

@@ -38,9 +38,9 @@ TEST_CASE("Resource group block classifier", "[resource_group]")
     markdownParser.parse(source, markdownAST);
 
     REQUIRE(!markdownAST.children().empty());
-    sectionType = SectionProcessor<ResourceGroup>::sectionType(markdownAST.children().begin());
+    sectionType = ResourceGroupProcessor::sectionType(markdownAST.children().begin());
     REQUIRE(sectionType == ResourceGroupSectionType);
-    sectionType = SectionProcessor<ResourceGroup>::sectionType(markdownAST.children().begin() + 8);
+    sectionType = ResourceGroupProcessor::sectionType(markdownAST.children().begin() + 8);
     REQUIRE(sectionType == ResourceGroupSectionType);
 }
 

@@ -20,14 +20,9 @@ namespace snowcrash {
     /** Parameters matching regex */
     const char* const ParametersRegex = "^[[:blank:]]*[Pp]arameters?[[:blank:]]*$";
 
-    struct MapParametersRegexToSectionType {
-        MapRegexToSectionType operator()() const {
-            MapRegexToSectionType result;
-
-            result.insert(std::make_pair(ParametersRegex, ParametersSectionType));
-
-            return result;
-        }
+    struct ParametersSectionTraits {
+        static const mdp::MarkdownNodeType MarkdownNodeType = mdp::ListItemMarkdownNodeType;
+        typedef EnumList<ParametersSectionType> SectionTypes;
     };
 
     /** No parameters specified message */
@@ -40,7 +35,7 @@ namespace snowcrash {
      * Parameters section processor
      */
     template<>
-    struct SectionProcessor<Parameters> : public SectionProcessorBase<Parameters> {
+    struct SectionProcessor<Parameters, ParametersSectionTraits> : public SectionProcessorBase<Parameters, ParametersSectionTraits> {
 
         static MarkdownNodeIterator processSignature(const MarkdownNodeIterator& node,
                                                      const MarkdownNodes& siblings,
@@ -121,13 +116,9 @@ namespace snowcrash {
             return false;
         }
 
-        static SectionType sectionType(const MarkdownNodeIterator& node) {
-            return SectionTypeParser<mdp::ListItemMarkdownNodeType, MapParametersRegexToSectionType>::sectionType(node);
-        }
-
         static SectionType nestedSectionType(const MarkdownNodeIterator& node) {
 
-            return SectionProcessor<Parameter>::sectionType(node);
+            return ParameterProcessor::sectionType(node);
         }
 
         static SectionTypes nestedSectionTypes() {
@@ -135,7 +126,7 @@ namespace snowcrash {
 
             // Parameter & descendants
             nested.push_back(ParameterSectionType);
-            SectionTypes types = SectionProcessor<Parameter>::nestedSectionTypes();
+            SectionTypes types = ParameterProcessor::nestedSectionTypes();
             nested.insert(nested.end(), types.begin(), types.end());
 
             return nested;
@@ -166,9 +157,7 @@ namespace snowcrash {
     };
 
     /** Parameters Section parser */
-    struct ParametersSectionTraits {
-        static const mdp::MarkdownNodeType MarkdownSectionType = mdp::ListItemMarkdownNodeType;
-    };
+    typedef SectionProcessor<Parameters, ParametersSectionTraits> ParametersProcessor;
     typedef SectionParser<Parameters, ParametersSectionTraits> ParametersParser;
 }
 
